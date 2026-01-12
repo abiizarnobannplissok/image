@@ -1,0 +1,5 @@
+{
+  "name": "NanooAir",
+  "description": "A playful banana-themed image generator powered by Gemini 3 (Nano Banana Pro). Generate high-quality images with various aspect ratios and download them instantly.",
+  "requestFramePermissions": []
+}
