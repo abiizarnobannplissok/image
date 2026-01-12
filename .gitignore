@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Skills and config (internal development files)
+.skills/
+.letta/
+
+# Archive files
+*.zip
