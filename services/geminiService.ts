@@ -34,14 +34,9 @@ const generateWithGemini = async (
 
   const response = await ai.models.generateContent({
     model: model,
-    contents: {
-      parts: parts,
-    },
+    contents: parts,
     config: {
-      responseModalities: ['IMAGE'],
-      imageConfig: {
-        aspectRatio: aspectRatio,
-      }
+      responseModalities: ['TEXT', 'IMAGE'],
     },
   });
 
