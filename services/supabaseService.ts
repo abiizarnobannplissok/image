@@ -6,12 +6,31 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not found. Image sharing will be disabled.');
+  console.warn('⚠️ Supabase credentials not found. Image sharing will be disabled.');
+  console.warn('   - VITE_SUPABASE_URL:', supabaseUrl || 'MISSING');
+  console.warn('   - VITE_SUPABASE_ANON_KEY:', supabaseAnonKey ? 'EXISTS' : 'MISSING');
+} else {
+  console.log('✅ Supabase credentials loaded');
+  console.log('   - URL:', supabaseUrl);
+  console.log('   - Anon Key:', supabaseAnonKey.substring(0, 20) + '...');
 }
 
 export const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey 
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+if (supabase) {
+  console.log('✅ Supabase client initialized successfully');
+  
+  supabase.storage.from('nanoo-images').list('', { limit: 1 })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('❌ Supabase Storage connection test FAILED:', error);
+      } else {
+        console.log('✅ Supabase Storage connection test PASSED');
+      }
+    });
+}
 
 /**
  * Upload image to Supabase Storage and save metadata to database
@@ -19,24 +38,39 @@ export const supabase: SupabaseClient | null = supabaseUrl && supabaseAnonKey
  * @returns Success status
  */
 export const uploadImageToSupabase = async (image: GeneratedImage): Promise<boolean> => {
+  console.log('🔍 Starting Supabase upload for image:', image.id);
+  console.log('   - Supabase configured:', !!supabase);
+  console.log('   - Image URL exists:', !!image.url);
+  console.log('   - Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+  console.log('   - Anon Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+  
   if (!supabase || !image.url) {
-    console.warn('Supabase not configured or image URL missing');
+    console.error('❌ Supabase upload BLOCKED:');
+    console.error('   - Supabase client:', supabase ? 'OK' : 'MISSING');
+    console.error('   - Image URL:', image.url ? 'OK' : 'MISSING');
     return false;
   }
 
   try {
-    // Convert base64 to blob
+    console.log('📦 Converting base64 to blob...');
     const base64Data = image.url.split(',')[1];
+    if (!base64Data) {
+      console.error('❌ Failed to extract base64 data from URL');
+      return false;
+    }
+    
     const mimeType = image.url.match(/data:([^;]+);/)?.[1] || 'image/png';
     const blob = base64ToBlob(base64Data, mimeType);
+    console.log('   - Blob size:', blob.size, 'bytes');
+    console.log('   - MIME type:', mimeType);
     
-    // Generate unique filename
     const fileExtension = mimeType.split('/')[1];
     const fileName = `${image.id}.${fileExtension}`;
     const filePath = `generated-images/${fileName}`;
+    console.log('   - Upload path:', filePath);
 
-    // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    console.log('☁️ Uploading to Supabase Storage bucket "nanoo-images"...');
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('nanoo-images')
       .upload(filePath, blob, {
         contentType: mimeType,
@@ -45,37 +79,59 @@ export const uploadImageToSupabase = async (image: GeneratedImage): Promise<bool
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
+      console.error('❌ STORAGE UPLOAD FAILED:', {
+        message: uploadError.message,
+        name: uploadError.name
+      });
+      console.error('Full error object:', JSON.stringify(uploadError, null, 2));
       return false;
     }
+    
+    console.log('✅ Storage upload successful:', uploadData);
 
-    // Get public URL
+    console.log('🔗 Generating public URL...');
     const { data: urlData } = supabase.storage
       .from('nanoo-images')
       .getPublicUrl(filePath);
+    console.log('   - Public URL:', urlData.publicUrl);
 
-    // Save metadata to database
+    console.log('💾 Saving metadata to database...');
+    const dbRecord = {
+      id: image.id,
+      prompt: image.prompt,
+      aspect_ratio: image.aspectRatio,
+      timestamp: image.timestamp,
+      status: image.status,
+      storage_path: filePath,
+      public_url: urlData.publicUrl
+    };
+    console.log('   - Database record:', dbRecord);
+    
     const { error: dbError } = await supabase
       .from('generated_images')
-      .insert([{
-        id: image.id,
-        prompt: image.prompt,
-        aspect_ratio: image.aspectRatio,
-        timestamp: image.timestamp,
-        status: image.status,
-        storage_path: filePath,
-        public_url: urlData.publicUrl
-      }]);
+      .insert([dbRecord]);
 
     if (dbError) {
-      console.error('Database insert error:', dbError);
+      console.error('❌ DATABASE INSERT FAILED:', {
+        message: dbError.message,
+        code: dbError.code,
+        details: dbError.details,
+        hint: dbError.hint
+      });
+      console.error('Full error object:', JSON.stringify(dbError, null, 2));
       return false;
     }
 
-    console.log('✅ Image uploaded to Supabase:', image.id);
+    console.log('✅✅✅ Image fully uploaded to Supabase:', image.id);
     return true;
   } catch (error) {
-    console.error('Error uploading to Supabase:', error);
+    console.error('❌ UNEXPECTED ERROR during Supabase upload:');
+    console.error('   - Error type:', error instanceof Error ? error.constructor.name : typeof error);
+    console.error('   - Error message:', error instanceof Error ? error.message : String(error));
+    console.error('   - Full error:', error);
+    if (error instanceof Error && error.stack) {
+      console.error('   - Stack trace:', error.stack);
+    }
     return false;
   }
 };

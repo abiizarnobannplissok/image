@@ -218,9 +218,23 @@ const App: React.FC = () => {
             console.log('✅ Successfully uploaded to Supabase');
           } else {
             console.warn('⚠️ Failed to upload to Supabase, only saved locally');
+            setImages((prev) => 
+              prev.map(img => 
+                img.id === generationId 
+                  ? { ...img, errorMessage: '⚠️ Saved locally only (Supabase upload failed)' }
+                  : img
+              )
+            );
           }
         }).catch(err => {
           console.error('Supabase upload error:', err);
+          setImages((prev) => 
+            prev.map(img => 
+              img.id === generationId 
+                ? { ...img, errorMessage: '⚠️ Saved locally only (Supabase upload error)' }
+                : img
+            )
+          );
         });
       }
     } catch (err: any) {

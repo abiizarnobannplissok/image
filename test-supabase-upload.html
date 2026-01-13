@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Storage Upload Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0a0a0a;
+      color: #00ff00;
+    }
+    h1 { color: #00ff00; border-bottom: 2px solid #00ff00; padding-bottom: 10px; }
+    .section { margin: 20px 0; padding: 15px; background: #1a1a1a; border-left: 3px solid #00ff00; }
+    .label { font-weight: bold; color: #00aaff; }
+    input, button { 
+      padding: 10px; 
+      margin: 5px 0; 
+      width: 100%; 
+      background: #2a2a2a; 
+      color: #00ff00; 
+      border: 1px solid #00ff00;
+      font-family: 'Courier New', monospace;
+    }
+    button { cursor: pointer; background: #003300; }
+    button:hover { background: #005500; }
+    .log { 
+      background: #000; 
+      padding: 15px; 
+      margin: 10px 0; 
+      border: 1px solid #333; 
+      max-height: 400px; 
+      overflow-y: auto;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .warning { color: #ffaa00; }
+    .info { color: #00aaff; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Supabase Storage Upload Diagnostic Tool</h1>
+  
+  <div class="section">
+    <h2>📋 Instructions</h2>
+    <p>This tool tests your Supabase Storage configuration by attempting to upload a test image.</p>
+    <ol>
+      <li>Enter your Supabase credentials below</li>
+      <li>Click "Run Full Diagnostic Test"</li>
+      <li>Check the logs for any errors</li>
+      <li>Screenshot and share the results</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <h2>🔐 Supabase Credentials</h2>
+    <div class="label">Supabase URL:</div>
+    <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co" value="https://hxlwmbyvsumnfezmkfac.supabase.co">
+    
+    <div class="label">Supabase Anon Key:</div>
+    <input type="password" id="supabaseKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4bHdtYnl2c3VtbmZlem1rZmFjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzMTYyMDUsImV4cCI6MjA4Mzg5MjIwNX0.kvg2_YqMel-yJFbpBmEnoNC0q1JULlLffJuzl04ZlKw">
+    
+    <button onclick="runFullTest()">🚀 Run Full Diagnostic Test</button>
+  </div>
+
+  <div class="section">
+    <h2>📊 Test Results</h2>
+    <div id="logs" class="log">Waiting for test to run...</div>
+  </div>
+
+  <script>
+    function log(message, type = 'info') {
+      const logsDiv = document.getElementById('logs');
+      const timestamp = new Date().toLocaleTimeString();
+      const colorClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+      logsDiv.innerHTML += `<div class="${colorClass}">[${timestamp}] ${message}</div>`;
+      logsDiv.scrollTop = logsDiv.scrollHeight;
+    }
+
+    function clearLogs() {
+      document.getElementById('logs').innerHTML = '';
+    }
+
+    async function runFullTest() {
+      clearLogs();
+      log('🔍 Starting diagnostic test...', 'info');
+      
+      const url = document.getElementById('supabaseUrl').value;
+      const key = document.getElementById('supabaseKey').value;
+
+      if (!url || !key) {
+        log('❌ ERROR: Missing credentials!', 'error');
+        return;
+      }
+
+      log(`📡 Supabase URL: ${url}`, 'info');
+      log(`🔑 Anon Key: ${key.substring(0, 30)}...`, 'info');
+
+      try {
+        log('🔧 Creating Supabase client...', 'info');
+        const { createClient } = supabase;
+        const client = createClient(url, key);
+        log('✅ Supabase client created', 'success');
+
+        log('\n--- TEST 1: Storage Bucket Connection ---', 'info');
+        const { data: buckets, error: bucketError } = await client.storage.listBuckets();
+        if (bucketError) {
+          log(`❌ Failed to list buckets: ${bucketError.message}`, 'error');
+          log(`   Code: ${bucketError.code || 'N/A'}`, 'error');
+          return;
+        }
+        log(`✅ Found ${buckets.length} buckets:`, 'success');
+        buckets.forEach(b => log(`   - ${b.name} (${b.public ? 'PUBLIC' : 'PRIVATE'})`, 'info'));
+
+        const nanooExists = buckets.find(b => b.name === 'nanoo-images');
+        if (!nanooExists) {
+          log('❌ Bucket "nanoo-images" NOT FOUND!', 'error');
+          return;
+        }
+        log('✅ Bucket "nanoo-images" exists', 'success');
+        log(`   - Public: ${nanooExists.public}`, 'info');
+
+        log('\n--- TEST 2: List Files in Bucket ---', 'info');
+        const { data: files, error: listError } = await client.storage
+          .from('nanoo-images')
+          .list('', { limit: 10 });
+        
+        if (listError) {
+          log(`❌ Failed to list files: ${listError.message}`, 'error');
+          return;
+        }
+        log(`✅ Successfully listed files (${files.length} items)`, 'success');
+
+        log('\n--- TEST 3: Upload Test Image ---', 'info');
+        const testImageData = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+        const blob = base64ToBlob(testImageData, 'image/png');
+        log(`📦 Created test blob: ${blob.size} bytes`, 'info');
+
+        const testFileName = `test-upload-${Date.now()}.png`;
+        const testPath = `generated-images/${testFileName}`;
+        log(`📤 Uploading to: ${testPath}`, 'info');
+
+        const { data: uploadData, error: uploadError } = await client.storage
+          .from('nanoo-images')
+          .upload(testPath, blob, {
+            contentType: 'image/png',
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) {
+          log(`❌ UPLOAD FAILED: ${uploadError.message}`, 'error');
+          log(`   Name: ${uploadError.name}`, 'error');
+          log(`   Full error: ${JSON.stringify(uploadError, null, 2)}`, 'error');
+          return;
+        }
+
+        log('✅✅✅ UPLOAD SUCCESSFUL!', 'success');
+        log(`   Path: ${uploadData.path}`, 'success');
+
+        log('\n--- TEST 4: Get Public URL ---', 'info');
+        const { data: urlData } = client.storage
+          .from('nanoo-images')
+          .getPublicUrl(testPath);
+        
+        log(`✅ Public URL generated: ${urlData.publicUrl}`, 'success');
+
+        log('\n--- TEST 5: Verify File Exists ---', 'info');
+        const { data: verifyFiles, error: verifyError } = await client.storage
+          .from('nanoo-images')
+          .list('generated-images', { limit: 100 });
+
+        if (verifyError) {
+          log(`❌ Failed to verify: ${verifyError.message}`, 'error');
+        } else {
+          const found = verifyFiles.find(f => f.name === testFileName);
+          if (found) {
+            log(`✅ File verified in storage! Size: ${found.metadata?.size || 'unknown'}`, 'success');
+          } else {
+            log('❌ File uploaded but NOT found in list!', 'error');
+          }
+        }
+
+        log('\n--- TEST 6: Database Connection ---', 'info');
+        const { data: dbData, error: dbError } = await client
+          .from('generated_images')
+          .select('count');
+
+        if (dbError) {
+          log(`❌ Database query failed: ${dbError.message}`, 'error');
+          log(`   Code: ${dbError.code}`, 'error');
+          log(`   Details: ${dbError.details}`, 'error');
+        } else {
+          log('✅ Database connection successful', 'success');
+        }
+
+        log('\n--- TEST 7: Database Insert ---', 'info');
+        const testRecord = {
+          id: `test-${Date.now()}`,
+          prompt: 'Diagnostic test image',
+          aspect_ratio: '1:1',
+          timestamp: Date.now(),
+          status: 'success',
+          storage_path: testPath,
+          public_url: urlData.publicUrl
+        };
+
+        const { error: insertError } = await client
+          .from('generated_images')
+          .insert([testRecord]);
+
+        if (insertError) {
+          log(`❌ Database insert failed: ${insertError.message}`, 'error');
+          log(`   Code: ${insertError.code}`, 'error');
+          log(`   Hint: ${insertError.hint}`, 'error');
+        } else {
+          log('✅ Database insert successful', 'success');
+        }
+
+        log('\n\n🎉 ALL TESTS COMPLETED!', 'success');
+        log('If you see this message, Supabase is configured correctly.', 'success');
+        log('Check console for "generated-images/" folder in Storage dashboard.', 'info');
+
+      } catch (err) {
+        log(`❌ UNEXPECTED ERROR: ${err.message}`, 'error');
+        log(`   Stack: ${err.stack}`, 'error');
+      }
+    }
+
+    function base64ToBlob(base64, mimeType) {
+      const byteCharacters = atob(base64);
+      const byteArrays = [];
+
+      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+
+      return new Blob(byteArrays, { type: mimeType });
+    }
+  </script>
+</body>
+</html>
