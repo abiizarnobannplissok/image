@@ -38,9 +38,9 @@ const generateWithGemini = async (
       parts: parts,
     },
     config: {
+      responseModalities: ['IMAGE'],
       imageConfig: {
-        aspectRatio: aspectRatio as any,
-        imageSize: "1K"
+        aspectRatio: aspectRatio,
       }
     },
   });
@@ -70,8 +70,8 @@ const generateWithImagen = async (
     model: model,
     prompt: prompt,
     config: {
-      aspectRatio: aspectRatio,
       numberOfImages: 1,
+      aspectRatio: aspectRatio,
     },
   });
 
