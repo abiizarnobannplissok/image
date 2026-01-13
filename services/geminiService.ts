@@ -37,6 +37,9 @@ const generateWithGemini = async (
     contents: parts,
     config: {
       responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: {
+        aspectRatio: aspectRatio,
+      }
     },
   });
 
