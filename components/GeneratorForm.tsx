@@ -357,13 +357,19 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
             return (
               <div 
                 key={index}
-                onDragEnter={(e) => onDrag(e, index)}
-                onDragOver={(e) => onDrag(e, index)}
-                onDragLeave={(e) => onDrag(e, index)}
-                onDrop={(e) => onDrop(e, index)}
+                onDragEnter={(e) => !referenceImages[index] && onDrag(e, index)}
+                onDragOver={(e) => {
+                  if (!referenceImages[index]) {
+                    onDrag(e, index);
+                  } else {
+                    e.preventDefault();
+                  }
+                }}
+                onDragLeave={(e) => !referenceImages[index] && onDrag(e, index)}
+                onDrop={(e) => !referenceImages[index] && onDrop(e, index)}
                 onClick={() => !referenceImages[index] && triggerInput(index)}
-                className={`group relative aspect-[4/3] border transition-all cursor-pointer flex flex-col items-center justify-center overflow-hidden
-                  ${referenceImages[index] ? 'border-gray-700' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20'}
+                className={`group relative aspect-[4/3] border transition-all flex flex-col items-center justify-center overflow-hidden
+                  ${referenceImages[index] ? 'border-gray-700 cursor-default' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20 cursor-pointer'}
                   ${dragActive === index ? 'border-white bg-white/5 scale-[1.02]' : ''}
                 `}
               >
@@ -380,28 +386,39 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                     <img 
                       src={referenceImages[index]} 
                       alt={`Ref ${index}`} 
-                      className="w-full h-full object-cover cursor-grab active:cursor-grabbing"
+                      className="w-full h-full object-cover cursor-grab active:cursor-grabbing select-none"
                       draggable={true}
                       onDragStart={(e) => {
+                        e.stopPropagation();
+                        
+                        const img = e.currentTarget;
+                        e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
+                        
                         e.dataTransfer.setData('text/uri-list', referenceImages[index]);
                         e.dataTransfer.setData('text/plain', referenceImages[index]);
-                        e.dataTransfer.effectAllowed = 'copyMove';
+                        e.dataTransfer.setData('text/html', `<img src="${referenceImages[index]}" />`);
+                        e.dataTransfer.effectAllowed = 'copy';
+                        e.dataTransfer.dropEffect = 'copy';
+                      }}
+                      onDragEnd={(e) => {
+                        e.stopPropagation();
                       }}
                     />
                     <button 
                       type="button"
                       onClick={(e) => { e.stopPropagation(); removeReference(index); }}
-                      className="absolute top-1 right-1 bg-black/70 text-white w-5 h-5 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors text-xs font-bold z-10"
-                      title="Remove image"
+                      draggable={false}
+                      className="absolute top-1 right-1 bg-black/80 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors text-sm font-bold z-20 shadow-lg"
+                      title="Hapus gambar"
                     >
                       ×
                     </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1 pointer-events-none">
-                      <span className="text-[8px] text-white/80 flex items-center justify-center gap-1">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 pointer-events-none">
+                      <span className="text-[9px] text-white flex items-center justify-center gap-1 font-medium">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                         </svg>
-                        Drag to use
+                        Seret ke tab lain
                       </span>
                     </div>
                   </>
