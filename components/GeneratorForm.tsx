@@ -366,7 +366,7 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
               )}
             </div>
           </div>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 ${model.startsWith('imagen-') ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 ${model.startsWith('imagen-') ? 'opacity-40 pointer-events-none' : ''}`}>
           {Array.from({ length: visibleSlots }).map((_, index) => {
             const getLabel = (idx: number) => {
               if (idx === 0) return 'PRIMARY';
@@ -406,12 +406,12 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                       }
                     }
                   }}
-                  className={`group relative border transition-all flex flex-row items-center justify-center gap-3 px-4 overflow-hidden h-12 sm:h-14
-                    ${referenceImages[index] ? 'border-gray-600 cursor-grab active:cursor-grabbing shadow-sm' : 'border-dashed border-gray-700 hover:border-gray-400 bg-gray-900/40 cursor-pointer hover:bg-gray-800/60'}
-                    ${dragActive === index ? 'border-white bg-white/10 scale-[1.01]' : ''}
+                  className={`group relative border transition-all flex flex-col items-center justify-center gap-2 overflow-hidden aspect-square
+                    ${referenceImages[index] ? 'border-gray-600 cursor-grab active:cursor-grabbing shadow-lg' : 'border-dashed border-gray-700 hover:border-gray-400 bg-gray-900/40 cursor-pointer hover:bg-gray-800/60'}
+                    ${dragActive === index ? 'border-white bg-white/10 scale-[1.02] shadow-xl' : ''}
                     ${isDeleteMode && referenceImages[index] ? 'ring-2 ring-red-500/50 cursor-pointer !border-red-500' : ''}
-                    ${isPrimary && !referenceImages[index] ? 'border-blue-500/50' : ''}
-                    ${isSecondary && !referenceImages[index] ? 'border-purple-500/50' : ''}
+                    ${isPrimary && !referenceImages[index] ? 'border-blue-500/40 ring-1 ring-blue-500/20' : ''}
+                    ${isSecondary && !referenceImages[index] ? 'border-purple-500/40 ring-1 ring-purple-500/20' : ''}
                   `}
                 >
                 <input 
@@ -424,56 +424,53 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                 
                 {referenceImages[index] ? (
                   <>
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded overflow-hidden flex-shrink-0 border border-gray-700">
-                      <img 
-                        src={referenceImages[index]} 
-                        alt={`Ref ${index}`} 
-                        className={`w-full h-full object-cover select-none ${isDeleteMode ? 'opacity-70 grayscale' : ''}`}
-                        draggable={!isDeleteMode}
-                        onDragStart={(e) => {
-                          if (isDeleteMode) {
-                            e.preventDefault();
-                            return;
-                          }
-                          e.stopPropagation();
-                          
-                          const img = e.currentTarget;
-                          e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
-                          
-                          e.dataTransfer.setData('text/uri-list', referenceImages[index]);
-                          e.dataTransfer.setData('text/plain', referenceImages[index]);
-                          e.dataTransfer.setData('text/html', `<img src="${referenceImages[index]}" />`);
-                          e.dataTransfer.effectAllowed = 'copy';
-                          e.dataTransfer.dropEffect = 'copy';
-                        }}
-                        onDragEnd={(e) => {
-                          e.stopPropagation();
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-bold text-gray-400 truncate tracking-tight">{getLabel(index)}</p>
-                      <p className="text-[9px] text-gray-600 truncate">Image uploaded</p>
-                    </div>
+                    <img 
+                      src={referenceImages[index]} 
+                      alt={`Ref ${index}`} 
+                      className={`w-full h-full object-cover select-none ${isDeleteMode ? 'opacity-70 grayscale' : ''}`}
+                      draggable={!isDeleteMode}
+                      onDragStart={(e) => {
+                        if (isDeleteMode) {
+                          e.preventDefault();
+                          return;
+                        }
+                        e.stopPropagation();
+                        
+                        const img = e.currentTarget;
+                        e.dataTransfer.setDragImage(img, img.width / 2, img.height / 2);
+                        
+                        e.dataTransfer.setData('text/uri-list', referenceImages[index]);
+                        e.dataTransfer.setData('text/plain', referenceImages[index]);
+                        e.dataTransfer.setData('text/html', `<img src="${referenceImages[index]}" />`);
+                        e.dataTransfer.effectAllowed = 'copy';
+                        e.dataTransfer.dropEffect = 'copy';
+                      }}
+                      onDragEnd={(e) => {
+                        e.stopPropagation();
+                      }}
+                    />
                     {isDeleteMode && (
-                      <div className="absolute inset-0 bg-red-900/20 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
-                         <div className="bg-red-900 text-red-100 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter border border-red-500">
+                      <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[1px] flex items-center justify-center pointer-events-none">
+                         <div className="bg-red-900 text-red-100 px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest border border-red-500 shadow-xl">
                            REMOVE
                          </div>
                       </div>
                     )}
+                    <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2 pointer-events-none transition-opacity duration-300 ${isDeleteMode ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
+                      <p className="text-[10px] font-bold text-white text-center uppercase tracking-tighter">{getLabel(index)}</p>
+                    </div>
                   </>
                 ) : (
                   <>
-                    <svg className="w-4 h-4 text-gray-500 group-hover:text-gray-300 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-8 h-8 text-gray-500 group-hover:text-gray-300 transition-colors flex-shrink-0 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    <div className="flex flex-col items-start leading-tight">
-                      <span className="text-[11px] font-black uppercase tracking-wide text-gray-400 group-hover:text-white transition-colors">
+                    <div className="flex flex-col items-center leading-tight">
+                      <span className="text-[12px] font-black uppercase tracking-wider text-gray-400 group-hover:text-white transition-colors">
                         {getLabel(index)}
                       </span>
-                      <span className="text-[9px] text-gray-600 group-hover:text-gray-400 transition-colors font-medium">
-                        {isPrimary ? 'Set main style' : isSecondary ? 'Set secondary' : 'Add reference'}
+                      <span className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors font-medium mt-0.5">
+                        {isPrimary ? 'Style' : isSecondary ? 'Content' : 'Ref'}
                       </span>
                     </div>
                   </>
