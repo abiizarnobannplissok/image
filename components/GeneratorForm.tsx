@@ -26,6 +26,7 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
   const [isImproving, setIsImproving] = useState(false);
   const [referenceImages, setReferenceImages] = useState<string[]>(Array(14).fill(''));
   const [dragActive, setDragActive] = useState<number | null>(null);
+  const [isDeleteMode, setIsDeleteMode] = useState(false);
   
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>(Array(14).fill(null));
   const pasteAreaRef = useRef<HTMLDivElement>(null);
@@ -335,17 +336,33 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
       </button>
 
       <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div className="flex flex-col">
-            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Reference Images (Drag & Drop)</label>
-            <span className="text-[9px] text-gray-600">
-              💡 Drag images to other tabs | Click × to delete | Paste Ctrl+V anywhere
-            </span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex flex-col">
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Reference Images (Drag & Drop)</label>
+              <span className="text-[9px] text-gray-600">
+                {isDeleteMode 
+                  ? <span className="text-red-400 font-bold animate-pulse">🗑️ DELETE MODE ACTIVE - Click image to remove</span>
+                  : "💡 Drag images to other tabs | Right-click to delete | Paste Ctrl+V"
+                }
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteMode(!isDeleteMode)}
+                className={`text-[10px] font-bold px-2 py-1 border transition-all flex items-center gap-1 ${isDeleteMode ? 'bg-red-900/50 border-red-500 text-red-200' : 'bg-transparent border-gray-800 text-gray-500 hover:text-gray-300 hover:border-gray-600'}`}
+                title={isDeleteMode ? "Exit Delete Mode" : "Enter Delete Mode to remove images"}
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {isDeleteMode ? "DONE" : "DELETE"}
+              </button>
+              {model.startsWith('imagen-') && (
+                <span className="text-[9px] text-yellow-500 font-mono">⚠ Imagen models don't support reference images</span>
+              )}
+            </div>
           </div>
-          {model.startsWith('imagen-') && (
-            <span className="text-[9px] text-yellow-500 font-mono">⚠ Imagen models don't support reference images</span>
-          )}
-        </div>
         <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4 ${model.startsWith('imagen-') ? 'opacity-40 pointer-events-none' : ''}`}>
           {Array.from({ length: visibleSlots }).map((_, index) => {
             const getLabel = (idx: number) => {
@@ -367,10 +384,25 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                 }}
                 onDragLeave={(e) => !referenceImages[index] && onDrag(e, index)}
                 onDrop={(e) => !referenceImages[index] && onDrop(e, index)}
-                onClick={() => !referenceImages[index] && triggerInput(index)}
+                onClick={() => {
+                  if (isDeleteMode && referenceImages[index]) {
+                    removeReference(index);
+                  } else if (!referenceImages[index]) {
+                    triggerInput(index);
+                  }
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  if (referenceImages[index]) {
+                    if (window.confirm("Remove this reference image?")) {
+                       removeReference(index);
+                    }
+                  }
+                }}
                 className={`group relative aspect-[4/3] border transition-all flex flex-col items-center justify-center overflow-hidden
-                  ${referenceImages[index] ? 'border-gray-700 cursor-default' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20 cursor-pointer'}
+                  ${referenceImages[index] ? 'border-gray-700 cursor-grab active:cursor-grabbing' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20 cursor-pointer'}
                   ${dragActive === index ? 'border-white bg-white/5 scale-[1.02]' : ''}
+                  ${isDeleteMode && referenceImages[index] ? 'ring-2 ring-red-500/50 cursor-pointer !border-red-500' : ''}
                 `}
               >
                 <input 
@@ -386,9 +418,13 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                     <img 
                       src={referenceImages[index]} 
                       alt={`Ref ${index}`} 
-                      className="w-full h-full object-cover cursor-grab active:cursor-grabbing select-none"
-                      draggable={true}
+                      className={`w-full h-full object-cover select-none ${isDeleteMode ? 'opacity-70 grayscale' : ''}`}
+                      draggable={!isDeleteMode}
                       onDragStart={(e) => {
+                        if (isDeleteMode) {
+                          e.preventDefault();
+                          return;
+                        }
                         e.stopPropagation();
                         
                         const img = e.currentTarget;
@@ -404,21 +440,19 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                         e.stopPropagation();
                       }}
                     />
-                    <button 
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); removeReference(index); }}
-                      draggable={false}
-                      className="absolute top-1 right-1 bg-black/80 text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors text-sm font-bold z-20 shadow-lg"
-                      title="Hapus gambar"
-                    >
-                      ×
-                    </button>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 pointer-events-none">
+                    {isDeleteMode && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                         <div className="bg-red-900/80 text-red-200 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest border border-red-500/50">
+                           TAP TO DELETE
+                         </div>
+                      </div>
+                    )}
+                    <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 pointer-events-none transition-opacity duration-300 ${isDeleteMode ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
                       <span className="text-[9px] text-white flex items-center justify-center gap-1 font-medium">
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                         </svg>
-                        Seret ke tab lain
+                        Drag to other tab
                       </span>
                     </div>
                   </>
