@@ -313,7 +313,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 min-h-[calc(100vh-16rem)]">
           {/* Left Column: Form */}
           <div className="space-y-6">
             <div className="flex items-center justify-between border-b border-gray-800 pb-4">
@@ -335,8 +335,8 @@ const App: React.FC = () => {
           </div>
 
           {/* Right Column: Gallery */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+          <div className="space-y-6 flex flex-col h-full">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4 flex-shrink-0">
               <h3 className="text-sm font-bold flex items-center gap-2 text-white">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -347,7 +347,7 @@ const App: React.FC = () => {
               </h3>
             </div>
             
-            <div className="max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
               <ImageGallery 
                 images={visibleImages} 
                 onExpandImage={setSelectedImage} 
