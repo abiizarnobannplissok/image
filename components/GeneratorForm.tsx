@@ -371,40 +371,42 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
               return `Ref ${idx + 1}`;
             };
 
-            return (
-              <div 
-                key={index}
-                onDragEnter={(e) => !referenceImages[index] && onDrag(e, index)}
-                onDragOver={(e) => {
-                  if (!referenceImages[index]) {
-                    onDrag(e, index);
-                  } else {
-                    e.preventDefault();
-                  }
-                }}
-                onDragLeave={(e) => !referenceImages[index] && onDrag(e, index)}
-                onDrop={(e) => !referenceImages[index] && onDrop(e, index)}
-                onClick={() => {
-                  if (isDeleteMode && referenceImages[index]) {
-                    removeReference(index);
-                  } else if (!referenceImages[index]) {
-                    triggerInput(index);
-                  }
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  if (referenceImages[index]) {
-                    if (window.confirm("Remove this reference image?")) {
-                       removeReference(index);
+              return (
+                <div 
+                  key={index}
+                  onDragEnter={(e) => !referenceImages[index] && onDrag(e, index)}
+                  onDragOver={(e) => {
+                    if (!referenceImages[index]) {
+                      onDrag(e, index);
+                    } else {
+                      e.preventDefault();
                     }
-                  }
-                }}
-                className={`group relative aspect-[4/3] border transition-all flex flex-col items-center justify-center overflow-hidden
-                  ${referenceImages[index] ? 'border-gray-700 cursor-grab active:cursor-grabbing' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20 cursor-pointer'}
-                  ${dragActive === index ? 'border-white bg-white/5 scale-[1.02]' : ''}
-                  ${isDeleteMode && referenceImages[index] ? 'ring-2 ring-red-500/50 cursor-pointer !border-red-500' : ''}
-                `}
-              >
+                  }}
+                  onDragLeave={(e) => !referenceImages[index] && onDrag(e, index)}
+                  onDrop={(e) => !referenceImages[index] && onDrop(e, index)}
+                  onClick={() => {
+                    if (isDeleteMode && referenceImages[index]) {
+                      removeReference(index);
+                    } else if (!referenceImages[index]) {
+                      triggerInput(index);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (referenceImages[index]) {
+                      if (window.confirm("Remove this reference image?")) {
+                         removeReference(index);
+                      }
+                    }
+                  }}
+                  className={`group relative aspect-[4/3] border transition-all flex flex-col items-center justify-center overflow-hidden
+                    ${referenceImages[index] ? 'border-gray-700 cursor-grab active:cursor-grabbing' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20 cursor-pointer'}
+                    ${dragActive === index ? 'border-white bg-white/5 scale-[1.02]' : ''}
+                    ${isDeleteMode && referenceImages[index] ? 'ring-2 ring-red-500/50 cursor-pointer !border-red-500' : ''}
+                    ${index === 0 ? 'col-span-2 row-span-2 !aspect-square bg-black/40' : ''}
+                    ${index === 1 ? 'col-span-1 row-span-1' : ''}
+                  `}
+                >
                 <input 
                   type="file" 
                   className="hidden" 
