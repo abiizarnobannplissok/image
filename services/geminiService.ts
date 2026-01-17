@@ -32,7 +32,7 @@ const generateWithGemini = async (
     });
   }
 
-  const response = await ai.models.generateContent({
+  const requestPayload = {
     model: model,
     contents: parts,
     config: {
@@ -41,7 +41,17 @@ const generateWithGemini = async (
         aspectRatio: aspectRatio,
       }
     },
+  };
+
+  console.log('🔍 [Gemini Request]', {
+    model,
+    aspectRatio,
+    prompt: prompt.substring(0, 50) + '...',
+    partsCount: parts.length,
+    config: requestPayload.config
   });
+
+  const response = await ai.models.generateContent(requestPayload);
 
   if (!response.candidates?.[0]?.content?.parts) {
     throw new Error("Empty response from model");
@@ -108,7 +118,15 @@ export const generateImage = async (params: GenerationParams, apiKey?: string): 
         return await generateWithGemini(ai, model, prompt, aspectRatio, referenceImages);
       }
     } catch (error: any) {
-      console.error(`Attempt ${retryCount + 1} failed:`, error);
+      console.error(`❌ [Generation Failed] Attempt ${retryCount + 1}:`, {
+        model,
+        aspectRatio,
+        errorMessage: error.message,
+        errorStatus: error.status,
+        errorCode: error.code,
+        errorDetails: error.details,
+        fullError: error
+      });
       lastError = error;
       
       const isRateLimit = error.status === 429 || 
