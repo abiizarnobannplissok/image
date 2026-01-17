@@ -335,13 +335,18 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
       </button>
 
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Reference Images (Drag & Drop)</label>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Reference Images (Drag & Drop)</label>
+            <span className="text-[9px] text-gray-600">
+              💡 Drag images to other tabs | Click × to delete | Paste Ctrl+V anywhere
+            </span>
+          </div>
           {model.startsWith('imagen-') && (
             <span className="text-[9px] text-yellow-500 font-mono">⚠ Imagen models don't support reference images</span>
           )}
         </div>
-        <div className={`grid grid-cols-2 gap-4 ${model.startsWith('imagen-') ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-4 ${model.startsWith('imagen-') ? 'opacity-40 pointer-events-none' : ''}`}>
           {Array.from({ length: visibleSlots }).map((_, index) => {
             const getLabel = (idx: number) => {
               if (idx === 0) return 'Primary';
@@ -372,17 +377,32 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                 
                 {referenceImages[index] ? (
                   <>
-                    <img src={referenceImages[index]} alt={`Ref ${index}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <button 
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); removeReference(index); }}
-                        className="bg-red-900/80 text-white p-2 rounded-full hover:bg-red-700 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    <img 
+                      src={referenceImages[index]} 
+                      alt={`Ref ${index}`} 
+                      className="w-full h-full object-cover cursor-grab active:cursor-grabbing"
+                      draggable={true}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/uri-list', referenceImages[index]);
+                        e.dataTransfer.setData('text/plain', referenceImages[index]);
+                        e.dataTransfer.effectAllowed = 'copyMove';
+                      }}
+                    />
+                    <button 
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeReference(index); }}
+                      className="absolute top-1 right-1 bg-black/70 text-white w-5 h-5 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors text-xs font-bold z-10"
+                      title="Remove image"
+                    >
+                      ×
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1 pointer-events-none">
+                      <span className="text-[8px] text-white/80 flex items-center justify-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                         </svg>
-                      </button>
+                        Drag to use
+                      </span>
                     </div>
                   </>
                 ) : (
