@@ -403,8 +403,7 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                     ${referenceImages[index] ? 'border-gray-700 cursor-grab active:cursor-grabbing' : 'border-dashed border-gray-800 hover:border-gray-500 bg-gray-950/20 cursor-pointer'}
                     ${dragActive === index ? 'border-white bg-white/5 scale-[1.02]' : ''}
                     ${isDeleteMode && referenceImages[index] ? 'ring-2 ring-red-500/50 cursor-pointer !border-red-500' : ''}
-                    ${index === 0 ? 'col-span-2 row-span-2 !aspect-square bg-black/40' : ''}
-                    ${index === 1 ? 'col-span-1 row-span-1' : ''}
+                    ${(index === 0 || index === 1) ? 'col-span-2 row-span-2 !aspect-square bg-black/40' : ''}
                   `}
                 >
                 <input 
