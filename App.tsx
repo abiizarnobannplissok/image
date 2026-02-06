@@ -90,12 +90,21 @@ const App: React.FC = () => {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       try {
-        localStorage.setItem('nanoo_generated_images', JSON.stringify(images));
+        // Optimize storage by removing large data for items that have cloud URLs
+        const imagesToStore = images.map(img => {
+          if (img.status === 'success' && img.url?.startsWith('http')) {
+            // Keep it as is if it's already a public URL
+            return img;
+          }
+          // If it's a data URL, we keep it but we might want to limit total count
+          return img;
+        }).slice(0, 50); // Limit localStorage to most recent 50 to prevent huge strings
+        
+        localStorage.setItem('nanoo_generated_images', JSON.stringify(imagesToStore));
       } catch (e) {
         console.error("Storage quota exceeded or error", e);
-        // Optional: Implement cleanup strategy here if needed
       }
-    }, 500); // Debounce by 500ms
+    }, 1000); // Increase debounce to 1s to reduce CPU pressure during active generation
 
     return () => clearTimeout(timeoutId);
   }, [images]);
@@ -260,7 +269,7 @@ const App: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-black flex items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-6xl mx-auto bg-black/70 backdrop-blur-sm border border-gray-800 p-4 md:p-10 rounded-xl shadow-2xl">
+      <div className="w-full max-w-6xl mx-auto bg-black border border-gray-800 p-4 md:p-10 rounded-xl shadow-2xl">
         
         {/* Top Header */}
         <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 border-b border-gray-800 pb-8">
@@ -347,7 +356,7 @@ const App: React.FC = () => {
               </h3>
             </div>
             
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+            <div className="flex-1 overflow-y-auto custom-scrollbar will-change-scroll pr-2 min-h-0">
               <ImageGallery 
                 images={visibleImages} 
                 onExpandImage={setSelectedImage} 

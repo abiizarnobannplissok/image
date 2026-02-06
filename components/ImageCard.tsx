@@ -158,9 +158,10 @@ export const ImageCard: React.FC<ImageCardProps> = ({
   return (
     <div 
       ref={cardRef}
-      className={`group relative bg-gray-900 border border-gray-700 hover:border-gray-600 transition-all duration-200 cursor-pointer ${
+      className={`group relative bg-gray-900 border border-gray-700 hover:border-gray-600 transition-colors duration-200 cursor-pointer ${
         isSelectionMode ? (isSelected ? 'ring-2 ring-blue-500 border-blue-500' : '') : ''
       }`}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '0 300px' }}
       onClick={handleCardClick}
       draggable={image.status === 'success' && !!image.url}
       onDragStart={onDragStart}
@@ -252,6 +253,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({
             alt={image.prompt}
             className="w-full h-full object-cover"
             loading="lazy"
+            decoding="async"
           />
         )}
       </div>
