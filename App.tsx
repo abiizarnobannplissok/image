@@ -24,9 +24,17 @@ const App: React.FC = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Memoize expensive calculations
-  const visibleImages = useMemo(() => {
-    return images.sort((a, b) => b.timestamp - a.timestamp);
+  const { latestImages, historyImages } = useMemo(() => {
+    const sorted = [...images].sort((a, b) => b.timestamp - a.timestamp);
+    if (sorted.length === 0) return { latestImages: [], historyImages: [] };
+
+    const firstImage = sorted[0];
+    const limit = firstImage.aspectRatio === '9:16' ? 2 : 4;
+    
+    return {
+      latestImages: sorted.slice(0, limit),
+      historyImages: sorted.slice(limit)
+    };
   }, [images]);
 
   const selectedImagesCount = useMemo(() => {
@@ -322,49 +330,84 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 min-h-[calc(100vh-16rem)]">
-          {/* Left Column: Form */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-              <h3 className="text-sm font-bold flex items-center gap-2 text-white">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
-                </svg>
-                INPUT
-              </h3>
-              <div className="px-3 py-1 bg-gray-900 border border-gray-700 text-[10px] font-bold text-gray-400">
-                NANOO FLASH
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+          <div className="space-y-12">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                <h3 className="text-sm font-bold flex items-center gap-2 text-white">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+                  </svg>
+                  INPUT
+                </h3>
+                <div className="px-3 py-1 bg-gray-900 border border-gray-700 text-[10px] font-bold text-gray-400">
+                  NANOO FLASH
+                </div>
               </div>
+              
+              <GeneratorForm 
+                onGenerate={handleGenerate} 
+                hasApiKey={hasApiKey}
+              />
             </div>
-            
-            <GeneratorForm 
-              onGenerate={handleGenerate} 
-              hasApiKey={hasApiKey}
-            />
-          </div>
 
-          {/* Right Column: Gallery */}
-          <div className="space-y-6 flex flex-col h-full">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-4 flex-shrink-0">
-              <h3 className="text-sm font-bold flex items-center gap-2 text-white">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21,15 16,10 5,21"></polyline>
-                </svg>
-                LIVE FEED
-              </h3>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto custom-scrollbar will-change-scroll pr-2 min-h-0">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+                <h3 className="text-sm font-black flex items-center gap-2 text-white uppercase tracking-widest">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Generation History
+                </h3>
+                <div className="text-[9px] font-mono text-gray-600 bg-black px-2 py-0.5 border border-gray-900">
+                  {historyImages.length} ITEMS
+                </div>
+              </div>
               <ImageGallery 
-                images={visibleImages} 
+                images={historyImages} 
                 onExpandImage={setSelectedImage} 
                 onVeoImage={setVeoImage}
                 onDeleteImage={handleDeleteImage}
                 isSelectionMode={isSelectionMode}
                 selectedIds={selectedIds}
                 onToggleSelection={handleToggleSelection}
+                columns={2}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-6 flex flex-col h-full bg-gray-900/10 border border-gray-800/50 p-6 rounded-none shadow-inner">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-4 flex-shrink-0">
+              <h3 className="text-sm font-black flex items-center gap-2 text-white uppercase tracking-widest">
+                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21,15 16,10 5,21"></polyline>
+                </svg>
+                Latest Results
+              </h3>
+              {latestImages.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="text-[9px] font-black text-blue-400 bg-blue-900/20 px-2 py-0.5 border border-blue-800/50 uppercase tracking-tighter">
+                    Active Preview
+                  </div>
+                  <div className="text-[10px] font-mono text-gray-500 bg-gray-900/50 px-2 py-0.5 border border-gray-800">
+                    {latestImages[0].aspectRatio}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 overflow-y-auto custom-scrollbar will-change-scroll pr-2 min-h-0">
+              <ImageGallery 
+                images={latestImages} 
+                onExpandImage={setSelectedImage} 
+                onVeoImage={setVeoImage}
+                onDeleteImage={handleDeleteImage}
+                isSelectionMode={isSelectionMode}
+                selectedIds={selectedIds}
+                onToggleSelection={handleToggleSelection}
+                columns={2}
               />
             </div>
           </div>
