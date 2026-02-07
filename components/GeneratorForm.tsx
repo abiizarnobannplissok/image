@@ -359,12 +359,9 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                 </svg>
                 {isDeleteMode ? "DONE" : "DELETE"}
               </button>
-              {model === 'gemini-3-pro-image-preview' && (
-                <span className="text-[9px] text-yellow-500 font-mono">⚠ Gemini 3 Pro model doesn't support reference images</span>
-              )}
             </div>
           </div>
-        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 ${model === 'gemini-3-pro-image-preview' ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4`}>
           {Array.from({ length: visibleSlots }).map((_, index) => {
             const getLabel = (idx: number) => {
               if (idx === 0) return 'PRIMARY';
