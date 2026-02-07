@@ -350,30 +350,6 @@ const App: React.FC = () => {
                 hasApiKey={hasApiKey}
               />
             </div>
-
-            <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-                <h3 className="text-sm font-black flex items-center gap-2 text-white uppercase tracking-widest">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Generation History
-                </h3>
-                <div className="text-[9px] font-mono text-gray-600 bg-black px-2 py-0.5 border border-gray-900">
-                  {historyImages.length} ITEMS
-                </div>
-              </div>
-              <ImageGallery 
-                images={historyImages} 
-                onExpandImage={setSelectedImage} 
-                onVeoImage={setVeoImage}
-                onDeleteImage={handleDeleteImage}
-                isSelectionMode={isSelectionMode}
-                selectedIds={selectedIds}
-                onToggleSelection={handleToggleSelection}
-                columns={2}
-              />
-            </div>
           </div>
 
           <div className="space-y-6 flex flex-col h-full bg-gray-900/10 border border-gray-800/50 p-6 rounded-none shadow-inner">
@@ -411,6 +387,30 @@ const App: React.FC = () => {
               />
             </div>
           </div>
+        </div>
+
+        <div className="mt-16 space-y-6">
+          <div className="flex items-center justify-between border-b border-gray-800 pb-4">
+            <h3 className="text-sm font-black flex items-center gap-2 text-white uppercase tracking-widest">
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Generation History
+            </h3>
+            <div className="text-[9px] font-mono text-gray-600 bg-black px-2 py-0.5 border border-gray-900">
+              {historyImages.length} ITEMS
+            </div>
+          </div>
+          <ImageGallery 
+            images={historyImages} 
+            onExpandImage={setSelectedImage} 
+            onVeoImage={setVeoImage}
+            onDeleteImage={handleDeleteImage}
+            isSelectionMode={isSelectionMode}
+            selectedIds={selectedIds}
+            onToggleSelection={handleToggleSelection}
+            columns={4}
+          />
         </div>
 
         {/* Minimalist Footer */}
