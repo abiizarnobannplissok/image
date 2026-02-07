@@ -351,7 +351,7 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-6 flex flex-col h-full bg-gray-900/10 border border-gray-800/50 p-6 rounded-none shadow-inner">
+          <div className="space-y-6 flex flex-col h-full bg-gray-900/10 border border-gray-800/50 p-4 sm:p-6 rounded-none shadow-inner">
             <div className="flex items-center justify-between border-b border-gray-800 pb-4 flex-shrink-0">
               <h3 className="text-sm font-black flex items-center gap-2 text-white uppercase tracking-widest">
                 <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,7 +373,7 @@ const App: React.FC = () => {
               )}
             </div>
             
-            <div className="flex-1 overflow-y-auto custom-scrollbar will-change-scroll pr-2 min-h-0">
+            <div className="flex-1 overflow-y-auto custom-scrollbar will-change-scroll pr-1 sm:pr-2 min-h-0">
               <ImageGallery 
                 images={latestImages} 
                 onExpandImage={setSelectedImage} 
