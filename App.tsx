@@ -28,8 +28,7 @@ const App: React.FC = () => {
     const sorted = [...images].sort((a, b) => b.timestamp - a.timestamp);
     if (sorted.length === 0) return { latestImages: [], historyImages: [] };
 
-    const firstImage = sorted[0];
-    const limit = firstImage.aspectRatio === '9:16' ? 2 : 4;
+    const limit = 6;
     
     return {
       latestImages: sorted.slice(0, limit),
@@ -383,7 +382,7 @@ const App: React.FC = () => {
                 isSelectionMode={isSelectionMode}
                 selectedIds={selectedIds}
                 onToggleSelection={handleToggleSelection}
-                columns={2}
+                columns={3}
               />
             </div>
           </div>
