@@ -1,12 +1,7 @@
 
 export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
 
-export type ImageModel = 
-  | 'gemini-3-pro-image-preview'
-  | 'gemini-2.5-flash-image'
-  | 'imagen-4.0-fast-generate-001'
-  | 'imagen-4.0-generate-001'
-  | 'imagen-4.0-ultra-generate-001';
+export type ImageModel = 'gemini-3-pro-image-preview';
 
 export interface ImageModelOption {
   id: ImageModel;
@@ -20,26 +15,6 @@ export const IMAGE_MODELS: ImageModelOption[] = [
     id: 'gemini-3-pro-image-preview',
     label: 'Gemini 3 Pro',
     description: 'High quality, balanced'
-  },
-  {
-    id: 'gemini-2.5-flash-image',
-    label: 'Nano Banana 🍌',
-    description: 'Fast, lightweight'
-  },
-  {
-    id: 'imagen-4.0-fast-generate-001',
-    label: 'Imagen 4 Fast',
-    description: 'Quick generation'
-  },
-  {
-    id: 'imagen-4.0-generate-001',
-    label: 'Imagen 4',
-    description: 'Standard quality'
-  },
-  {
-    id: 'imagen-4.0-ultra-generate-001',
-    label: 'Imagen 4 Ultra',
-    description: 'Highest quality'
   }
 ];
 

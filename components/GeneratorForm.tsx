@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { AspectRatio, ImageModel } from '../types';
 import { improvePrompt } from '../services/geminiService';
 import { CustomDropdown } from './CustomDropdown';
-import { ModelDropdown } from './ModelDropdown';
 
 interface GeneratorFormProps {
   onGenerate: (prompt: string, aspectRatio: AspectRatio, model: ImageModel, referenceImages?: string[]) => void;
@@ -284,10 +283,9 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
         </div>
         <div className="flex flex-col gap-1.5 flex-1">
           <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Model</label>
-          <ModelDropdown 
-            value={model}
-            onChange={setModel}
-          />
+          <div className="px-4 py-2 bg-gray-900 border border-gray-800 text-xs font-bold text-white uppercase tracking-wider">
+            Gemini 3 Pro
+          </div>
         </div>
       </div>
 
@@ -361,12 +359,12 @@ export const GeneratorForm: React.FC<GeneratorFormProps> = ({ onGenerate, hasApi
                 </svg>
                 {isDeleteMode ? "DONE" : "DELETE"}
               </button>
-              {model.startsWith('imagen-') && (
-                <span className="text-[9px] text-yellow-500 font-mono">⚠ Imagen models don't support reference images</span>
+              {model === 'gemini-3-pro-image-preview' && (
+                <span className="text-[9px] text-yellow-500 font-mono">⚠ Gemini 3 Pro model doesn't support reference images</span>
               )}
             </div>
           </div>
-        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 ${model.startsWith('imagen-') ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 ${model === 'gemini-3-pro-image-preview' ? 'opacity-40 pointer-events-none' : ''}`}>
           {Array.from({ length: visibleSlots }).map((_, index) => {
             const getLabel = (idx: number) => {
               if (idx === 0) return 'PRIMARY';
