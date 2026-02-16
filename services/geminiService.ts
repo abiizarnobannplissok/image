@@ -12,34 +12,41 @@ const isImagenModel = (model: ImageModel): boolean => {
 // Helper function to fetch image from URL and convert to base64
 const fetchImageAsBase64 = async (url: string): Promise<{ mimeType: string; data: string } | null> => {
   try {
-    console.log(`📥 Fetching image from URL: ${url.substring(0, 50)}...`);
-    const response = await fetch(url);
+    console.log(`📥 Fetching image from URL: ${url.substring(0, 60)}...`);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-cache',
+    });
+    
     if (!response.ok) {
       console.error(`❌ Failed to fetch image: ${response.status} ${response.statusText}`);
       return null;
     }
     
-    const blob = await response.blob();
-    const mimeType = blob.type || 'image/png';
+    // Get content type from response header
+    const contentType = response.headers.get('content-type');
+    const mimeType = contentType?.split(';')[0] || 'image/png';
     
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        // Extract base64 data from data URL
-        const dataUrlMatch = base64String.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-        if (dataUrlMatch && dataUrlMatch.length === 3) {
-          resolve({
-            mimeType: dataUrlMatch[1],
-            data: dataUrlMatch[2]
-          });
-        } else {
-          resolve(null);
-        }
-      };
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
+    // Get array buffer and convert to base64
+    const arrayBuffer = await response.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Convert to binary string then to base64
+    let binaryString = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binaryString += String.fromCharCode(uint8Array[i]);
+    }
+    
+    const base64Data = btoa(binaryString);
+    
+    console.log(`✅ Successfully fetched image (${mimeType}, ${Math.round(base64Data.length / 1024)}KB)`);
+    
+    return {
+      mimeType: mimeType,
+      data: base64Data
+    };
   } catch (error) {
     console.error(`❌ Error fetching image:`, error);
     return null;
@@ -71,14 +78,24 @@ const generateWithGemini = async (
   if (referenceImages && referenceImages.length > 0) {
     // Process reference images (can be URLs or base64 data)
     for (let index = 0; index < referenceImages.length; index++) {
-      const imgInput = referenceImages[index];
+      const imgInput = referenceImages[index].trim(); // Trim whitespace
       let imageData: { mimeType: string; data: string } | null = null;
       
-      // Check if input is a URL
-      if (imgInput.startsWith('http://') || imgInput.startsWith('https://')) {
+      console.log(`🖼️ Processing reference image ${index + 1}: ${imgInput.substring(0, 50)}...`);
+      
+      // Check if input is a URL (case insensitive)
+      const isUrl = imgInput.toLowerCase().startsWith('http://') || imgInput.toLowerCase().startsWith('https://');
+      
+      if (isUrl) {
+        console.log(`🔗 Detected URL for image ${index + 1}, fetching...`);
         // Fetch image from URL
         imageData = await fetchImageAsBase64(imgInput);
+        if (!imageData) {
+          console.error(`❌ Failed to fetch image from URL: ${imgInput}`);
+          continue; // Skip this image
+        }
       } else {
+        console.log(`📄 Processing as base64 data for image ${index + 1}`);
         // Handle base64 data (either data URL format or raw base64)
         const dataUrlMatch = imgInput.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
         if (dataUrlMatch && dataUrlMatch.length === 3) {
@@ -86,17 +103,28 @@ const generateWithGemini = async (
             mimeType: dataUrlMatch[1],
             data: dataUrlMatch[2]
           };
+          console.log(`✅ Parsed data URL for image ${index + 1}, mimeType: ${imageData.mimeType}`);
         } else if (imgInput.length > 100) {
           // Assume raw base64
           imageData = {
             mimeType: 'image/png',
             data: imgInput
           };
+          console.log(`✅ Using raw base64 for image ${index + 1}`);
+        } else {
+          console.warn(`⚠️ Invalid base64 data for image ${index + 1}, length: ${imgInput.length}`);
+          continue;
         }
       }
       
       // Add to parts if valid
-      if (imageData && imageData.data.length > 100) {
+      if (imageData && imageData.data && imageData.data.length > 100) {
+        // Ensure the data doesn't contain any URL strings
+        if (imageData.data.includes('http://') || imageData.data.includes('https://')) {
+          console.error(`❌ Image ${index + 1} data still contains URL! Aborting.`);
+          continue;
+        }
+        
         parts.push({
           inlineData: {
             mimeType: imageData.mimeType,
@@ -104,9 +132,9 @@ const generateWithGemini = async (
           }
         });
         validReferenceCount++;
-        console.log(`✅ Added reference image ${index + 1} (${imageData.mimeType}, ${Math.round(imageData.data.length / 1024)}KB)`);
+        console.log(`✅ Added reference image ${index + 1} to request (${imageData.mimeType}, ${Math.round(imageData.data.length / 1024)}KB)`);
       } else {
-        console.warn(`⚠️ Skipped invalid reference image ${index + 1}`);
+        console.warn(`⚠️ Skipped invalid reference image ${index + 1}: data length ${imageData?.data?.length || 0}`);
       }
     }
   }
