@@ -9,6 +9,43 @@ const isImagenModel = (model: ImageModel): boolean => {
   return model.startsWith('imagen-');
 };
 
+// Helper function to fetch image from URL and convert to base64
+const fetchImageAsBase64 = async (url: string): Promise<{ mimeType: string; data: string } | null> => {
+  try {
+    console.log(`📥 Fetching image from URL: ${url.substring(0, 50)}...`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error(`❌ Failed to fetch image: ${response.status} ${response.statusText}`);
+      return null;
+    }
+    
+    const blob = await response.blob();
+    const mimeType = blob.type || 'image/png';
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Extract base64 data from data URL
+        const dataUrlMatch = base64String.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+        if (dataUrlMatch && dataUrlMatch.length === 3) {
+          resolve({
+            mimeType: dataUrlMatch[1],
+            data: dataUrlMatch[2]
+          });
+        } else {
+          resolve(null);
+        }
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error(`❌ Error fetching image:`, error);
+    return null;
+  }
+};
+
 const generateWithGemini = async (
   ai: GoogleGenAI,
   model: string,
@@ -32,31 +69,46 @@ const generateWithGemini = async (
   let validReferenceCount = 0;
 
   if (referenceImages && referenceImages.length > 0) {
-    referenceImages.forEach((imgBase64, index) => {
-      // Handle both data URL format and raw base64
-      let mimeType = 'image/png';
-      let base64Data = imgBase64;
+    // Process reference images (can be URLs or base64 data)
+    for (let index = 0; index < referenceImages.length; index++) {
+      const imgInput = referenceImages[index];
+      let imageData: { mimeType: string; data: string } | null = null;
       
-      const dataUrlMatch = imgBase64.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-      if (dataUrlMatch && dataUrlMatch.length === 3) {
-        mimeType = dataUrlMatch[1];
-        base64Data = dataUrlMatch[2];
+      // Check if input is a URL
+      if (imgInput.startsWith('http://') || imgInput.startsWith('https://')) {
+        // Fetch image from URL
+        imageData = await fetchImageAsBase64(imgInput);
+      } else {
+        // Handle base64 data (either data URL format or raw base64)
+        const dataUrlMatch = imgInput.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+        if (dataUrlMatch && dataUrlMatch.length === 3) {
+          imageData = {
+            mimeType: dataUrlMatch[1],
+            data: dataUrlMatch[2]
+          };
+        } else if (imgInput.length > 100) {
+          // Assume raw base64
+          imageData = {
+            mimeType: 'image/png',
+            data: imgInput
+          };
+        }
       }
       
-      // Validate base64 data
-      if (base64Data && base64Data.length > 100) {
+      // Add to parts if valid
+      if (imageData && imageData.data.length > 100) {
         parts.push({
           inlineData: {
-            mimeType: mimeType,
-            data: base64Data
+            mimeType: imageData.mimeType,
+            data: imageData.data
           }
         });
         validReferenceCount++;
-        console.log(`✅ Added reference image ${index + 1} (${mimeType}, ${Math.round(base64Data.length / 1024)}KB)`);
+        console.log(`✅ Added reference image ${index + 1} (${imageData.mimeType}, ${Math.round(imageData.data.length / 1024)}KB)`);
       } else {
         console.warn(`⚠️ Skipped invalid reference image ${index + 1}`);
       }
-    });
+    }
   }
 
   const requestPayload = {
