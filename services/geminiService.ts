@@ -16,7 +16,18 @@ const generateWithGemini = async (
   aspectRatio: string,
   referenceImages?: string[]
 ): Promise<string | null> => {
-  const parts: any[] = [{ text: prompt }];
+  // Build enhanced prompt that explicitly instructs to use reference images
+  let enhancedPrompt = prompt;
+  
+  if (referenceImages && referenceImages.length > 0) {
+    if (referenceImages.length === 1) {
+      enhancedPrompt = `Use the provided reference image as a guide. ${prompt}`;
+    } else {
+      enhancedPrompt = `Use the ${referenceImages.length} provided reference images as guides. ${prompt}`;
+    }
+  }
+  
+  const parts: any[] = [{ text: enhancedPrompt }];
 
   if (referenceImages && referenceImages.length > 0) {
     referenceImages.forEach((imgBase64) => {

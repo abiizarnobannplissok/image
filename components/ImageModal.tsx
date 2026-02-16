@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GeneratedImage } from '../types';
 
 // Mobile-responsive fullscreen modal with scrolling support v2.1
@@ -9,6 +9,8 @@ interface ImageModalProps {
 }
 
 export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -25,6 +27,39 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose }) => {
       document.documentElement.style.overflow = 'auto';
     };
   }, [onClose]);
+
+  const handleDownload = async () => {
+    if (!image.url || isDownloading) return;
+    
+    setIsDownloading(true);
+    try {
+      // Fetch the image to handle cross-origin downloads
+      const response = await fetch(image.url);
+      const blob = await response.blob();
+      
+      // Create a temporary blob URL
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `nanooair-${image.id}.png`;
+      document.body.appendChild(link);
+      
+      // Trigger download
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback: open in new tab
+      window.open(image.url, '_blank');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (!image.url) return null;
 
@@ -74,13 +109,20 @@ export const ImageModal: React.FC<ImageModalProps> = ({ image, onClose }) => {
             </div>
 
             <div className="flex flex-col gap-3">
-               <a 
-                href={image.url}
-                download={`nanooair-${image.id}.png`}
-                className="w-full py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest text-center hover:bg-gray-200 transition-all"
+               <button 
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="w-full py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest text-center hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Download Asset
-              </a>
+                {isDownloading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    Downloading...
+                  </span>
+                ) : (
+                  'Download Asset'
+                )}
+              </button>
               <button 
                 onClick={onClose}
                 className="w-full py-3 border border-gray-700 text-gray-400 text-[10px] font-black uppercase tracking-widest hover:border-white hover:text-white transition-all"
