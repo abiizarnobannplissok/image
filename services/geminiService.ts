@@ -21,24 +21,40 @@ const generateWithGemini = async (
   
   if (referenceImages && referenceImages.length > 0) {
     if (referenceImages.length === 1) {
-      enhancedPrompt = `Use the provided reference image as a guide. ${prompt}`;
+      enhancedPrompt = `Use the provided reference image as a style and composition guide. Analyze the reference image's visual style, color palette, lighting, composition, and artistic elements, then incorporate these characteristics into the new image you generate. The reference image shows the aesthetic approach I want you to follow. Now create: ${prompt}`;
     } else {
-      enhancedPrompt = `Use the ${referenceImages.length} provided reference images as guides. ${prompt}`;
+      enhancedPrompt = `I have provided ${referenceImages.length} reference images. Analyze all reference images to understand the desired visual style, color palette, lighting, composition, and artistic approach. Use these reference images as guides for creating the new image. Combine the best visual elements from all references. Now create: ${prompt}`;
     }
   }
   
+  // Build parts array with text first, then reference images
   const parts: any[] = [{ text: enhancedPrompt }];
+  let validReferenceCount = 0;
 
   if (referenceImages && referenceImages.length > 0) {
-    referenceImages.forEach((imgBase64) => {
-      const matches = imgBase64.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
-      if (matches && matches.length === 3) {
+    referenceImages.forEach((imgBase64, index) => {
+      // Handle both data URL format and raw base64
+      let mimeType = 'image/png';
+      let base64Data = imgBase64;
+      
+      const dataUrlMatch = imgBase64.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+      if (dataUrlMatch && dataUrlMatch.length === 3) {
+        mimeType = dataUrlMatch[1];
+        base64Data = dataUrlMatch[2];
+      }
+      
+      // Validate base64 data
+      if (base64Data && base64Data.length > 100) {
         parts.push({
           inlineData: {
-            mimeType: matches[1],
-            data: matches[2]
+            mimeType: mimeType,
+            data: base64Data
           }
         });
+        validReferenceCount++;
+        console.log(`✅ Added reference image ${index + 1} (${mimeType}, ${Math.round(base64Data.length / 1024)}KB)`);
+      } else {
+        console.warn(`⚠️ Skipped invalid reference image ${index + 1}`);
       }
     });
   }
@@ -58,7 +74,10 @@ const generateWithGemini = async (
     model,
     aspectRatio,
     prompt: prompt.substring(0, 50) + '...',
-    partsCount: parts.length,
+    enhancedPrompt: enhancedPrompt.substring(0, 100) + '...',
+    totalParts: parts.length,
+    textParts: 1,
+    imageParts: validReferenceCount,
     config: requestPayload.config
   });
 
